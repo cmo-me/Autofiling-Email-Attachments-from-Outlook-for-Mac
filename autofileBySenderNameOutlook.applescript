@@ -1,3 +1,9 @@
+-- Adapted from a copyrighted script by Mark Hunte 2013 
+-- http://www.markosx.com/thecocoaquest/automatically-save-attachments-in-mail-app/
+-- Changed script to parse out the first part of the email address as the folder name, eliminated time stamp folder
+-- Changed to run as triggered script vs email rule
+-- explanation of what and why at scrubbs.me
+
 -- set up the attachment folder path
 tell application "Finder"
 	set folderName to "Attachments"
@@ -9,7 +15,8 @@ end tell
 
 tell application "Microsoft Outlook"
 	
-	set theMessages to selection
+	set theMessages to selection as list
+	
 	repeat with eachMessage in theMessages
 		
 		-- set the sub folder for the attachments to the first part of senders email before a period
@@ -26,39 +33,27 @@ tell application "Microsoft Outlook"
 		
 		
 		
-		-- use the unix /bin/test command to test if the timeStamp folder  exists. if not then create it and any intermediate directories as required
+		-- use the unix /bin/test command to test if the folder exists. if not then create it and any intermediate directories as required
 		if (do shell script "/bin/test -e " & quoted form of ((POSIX path of attachmentsFolder) & "/" & subFolder) & " ; echo $?") is "1" then
 			-- 1 is false
-			-- display dialog attachmentsFolder & "/" & subFolder
 			do shell script "/bin/mkdir -p " & quoted form of ((POSIX path of attachmentsFolder) & "/" & subFolder)
 			
 		end if
 		
 		try
 			-- Save the attachment
-			repeat with theAttachment in eachMessage's attachment
+			-- repeat with theAttachment in eachMessage's attachment
+			set theAttachment to every attachment of eachMessage
+			
+			repeat with theFile in theAttachment
 				
-				set originalName to name of theAttachment
+				set originalName to name of theFile
 				set savePath to attachmentsFolder & ":" & subFolder & ":" & originalName
 				try
-					save theAttachment in file (savePath)
+					save the theFile in file (savePath)
 				end try
+				
 			end repeat
-			--on error msg
-			--display dialog msg
 		end try
-		
-		
-		
-		-- set theArchiveMailboxName to "Processed"
-		-- if (mail folder theArchiveMailboxName exists) = false then
-		-- make new mail folder with properties {name:theArchiveMailboxName}
-		--   end if
-		-- repeat with aMessage in theMessages
-		-- 	move aMessage to mail folder theArchiveMailboxName
-		-- end repeat
-		
-		
 	end repeat
-	
 end tell
